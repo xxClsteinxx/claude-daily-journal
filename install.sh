@@ -87,6 +87,7 @@ cp "$SCRIPT_DIR/hooks/on-session-start.sh" "$INSTALL_DIR/on-session-start.sh"
 cp "$SCRIPT_DIR/hooks/on-session-end.sh"   "$INSTALL_DIR/on-session-end.sh"
 cp "$SCRIPT_DIR/hooks/daily-journal-cron.sh" "$INSTALL_DIR/daily-journal-cron.sh"
 cp "$SCRIPT_DIR/lib/feishu_doc_push.py"    "$INSTALL_DIR/lib/feishu_doc_push.py"
+cp "$SCRIPT_DIR/lib/claude_api.sh"         "$INSTALL_DIR/lib/claude_api.sh"
 
 chmod +x "$INSTALL_DIR/on-session-start.sh"
 chmod +x "$INSTALL_DIR/on-session-end.sh"

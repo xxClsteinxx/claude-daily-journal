@@ -10,7 +10,33 @@ CONFIG_FILE="$SCRIPT_DIR/config.sh"
 if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 fi
-JOURNAL_DIR="${JOURNAL_DIR:-$HOME/daily_journal}/raw"
+# 如果 API Key 未配置，尝试从 Claude Code settings.json 读取
+if [ -z "${CLAUDE_API_KEY:-}" ]; then
+    CLAUDE_API_KEY=$(python3 -c "
+import json, os
+settings = os.path.expanduser('~/.claude/settings.json')
+if os.path.exists(settings):
+    with open(settings) as f:
+        s = json.load(f)
+    print(s.get('env', {}).get('ANTHROPIC_API_KEY', ''))
+" 2>/dev/null)
+fi
+if [ -z "${CLAUDE_API_BASE:-}" ]; then
+    CLAUDE_API_BASE=$(python3 -c "
+import json, os
+settings = os.path.expanduser('~/.claude/settings.json')
+if os.path.exists(settings):
+    with open(settings) as f:
+        s = json.load(f)
+    print(s.get('env', {}).get('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'))
+" 2>/dev/null)
+fi
+# 加载 API 辅助函数
+LIB_DIR="$SCRIPT_DIR/../lib"
+if [ -f "$LIB_DIR/claude_api.sh" ]; then
+    source "$LIB_DIR/claude_api.sh"
+fi
+# 兼容旧模式：如果 API Key 不可用，回退到 claude CLI
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "")}"
 PYTHON3="python3"
 TODAY=$(date +%Y-%m-%d)
@@ -88,13 +114,20 @@ fi
 # 获取项目名称（从 cwd 提取最后一级目录名）
 PROJECT_NAME=$(basename "$CWD" 2>/dev/null || echo "unknown")
 
-# 用 Claude CLI 生成摘要
+# 生成摘要（优先用 API 直接调用，不产生 Claude Code 会话记录）
 SUMMARY=""
-if [ -n "$CLAUDE_BIN" ] && [ -x "$CLAUDE_BIN" ]; then
-    SUMMARY=$(echo "$CONVERSATION" | timeout 100 "$CLAUDE_BIN" --print -p "请根据以下 Claude Code 会话记录，用中文生成一段简短的工作摘要（3-5句话）。说明用户在这个项目中让 Claude 帮忙做了什么。只输出摘要内容，不要加标题或前缀。项目名：$PROJECT_NAME" 2>/dev/null)
+PROMPT="请根据以下 Claude Code 会话记录，用中文生成一段简短的工作摘要（3-5句话）。说明用户在这个项目中让 Claude 帮忙做了什么。只输出摘要内容，不要加标题或前缀。项目名：$PROJECT_NAME"
+
+if [ -n "${CLAUDE_API_KEY:-}" ] && type claude_api_call &>/dev/null; then
+    SUMMARY=$(claude_api_call "$PROMPT" "$CONVERSATION" 2>/dev/null)
 fi
 
-# 如果 Claude CLI 调用失败，使用原始对话的简要概括作为 fallback
+# 兜底：如果 API 不可用，使用 claude CLI（会产生会话记录）
+if [ -z "$SUMMARY" ] && [ -n "$CLAUDE_BIN" ] && [ -x "$CLAUDE_BIN" ]; then
+    SUMMARY=$(echo "$CONVERSATION" | timeout 100 "$CLAUDE_BIN" --print -p "$PROMPT" 2>/dev/null)
+fi
+
+# 最终兜底
 if [ -z "$SUMMARY" ]; then
     SUMMARY="[自动记录] 会话发生在 $PROJECT_NAME 项目中，对话包含 $(echo "$CONVERSATION" | wc -l) 条消息。"
 fi

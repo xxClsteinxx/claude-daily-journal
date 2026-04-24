@@ -13,12 +13,15 @@ FEISHU_WEBHOOK_URL=""
 FEISHU_APP_ID=""
 FEISHU_APP_SECRET=""
 
+# ─── Claude API 配置（用于生成摘要，不经过 Claude Code）────
+# 从 Claude Code settings.json 的 env 中获取，或手动填写
+# 使用 API 直接调用，不会在 Claude Code 历史记录中产生会话
+CLAUDE_API_KEY=""
+CLAUDE_API_BASE="https://api.anthropic.com"
+CLAUDE_MODEL="claude-sonnet-4-20250514"
+
 # ─── 日志存储目录 ──────────────────────────────────────
 JOURNAL_DIR="$HOME/daily_journal"
-
-# ─── Claude CLI 路径 ──────────────────────────────────
-# 留空则自动检测（推荐）
-CLAUDE_BIN=""
 
 # ─── Git 仓库扫描目录 ─────────────────────────────────
 # 收集这些目录下所有 git 仓库的今日提交

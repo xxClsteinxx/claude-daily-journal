@@ -74,6 +74,7 @@ rm -f "$INSTALL_DIR/on-session-start.sh"
 rm -f "$INSTALL_DIR/on-session-end.sh"
 rm -f "$INSTALL_DIR/daily-journal-cron.sh"
 rm -f "$INSTALL_DIR/lib/feishu_doc_push.py"
+rm -f "$INSTALL_DIR/lib/claude_api.sh"
 rmdir "$INSTALL_DIR/lib" 2>/dev/null || true
 ok "脚本文件已删除"
 

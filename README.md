@@ -8,12 +8,13 @@
 - **每日汇总**：定时汇总当天所有会话记录 + Git 提交，生成结构化日报
 - **飞书推送**：自动创建飞书云文档，并在群里发送卡片通知
 - **零依赖**：仅使用 Python 标准库，无需 pip install
+- **不污染历史**：使用 Anthropic API 直接调用，不会在 Claude Code 历史记录中产生会话
 
 ## 工作原理
 
 ```
 会话开始 → 记录元数据到 raw 日志
-会话结束 → 用 Claude CLI 生成摘要，追加到 raw 日志
+会话结束 → 用 Claude API 生成摘要（不经过 Claude Code，不产生会话记录）
 每天定时 → 汇总 raw 日志 + git 提交 → 生成日报 → 推送飞书
 ```
 
@@ -70,8 +71,11 @@ FEISHU_APP_SECRET="xxxxxxxxxx"
 | `FEISHU_WEBHOOK_URL` | 飞书群机器人 Webhook URL | 空（不推送群消息） |
 | `FEISHU_APP_ID` | 飞书应用 App ID | 空（不创建云文档） |
 | `FEISHU_APP_SECRET` | 飞书应用 App Secret | 空 |
+| `CLAUDE_API_KEY` | Anthropic API Key（优先使用，不产生会话记录） | 空（自动从 settings.json 读取） |
+| `CLAUDE_API_BASE` | Anthropic API Base URL | `https://api.anthropic.com` |
+| `CLAUDE_MODEL` | 摘要生成使用的模型 | `claude-sonnet-4-20250514` |
 | `JOURNAL_DIR` | 日志存储目录 | `$HOME/daily_journal` |
-| `CLAUDE_BIN` | Claude CLI 路径 | 自动检测 |
+| `CLAUDE_BIN` | Claude CLI 路径（兜底用） | 自动检测 |
 | `GIT_REPO_DIRS` | Git 仓库扫描目录（冒号分隔） | `$HOME/myCode` |
 | `CRON_HOUR` | 每日汇总小时（24h） | `22` |
 | `CRON_MINUTE` | 每日汇总分钟 | `30` |

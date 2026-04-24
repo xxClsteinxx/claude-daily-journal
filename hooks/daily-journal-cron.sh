@@ -11,6 +11,32 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 fi
 
+# 如果 API Key 未配置，尝试从 Claude Code settings.json 读取
+if [ -z "${CLAUDE_API_KEY:-}" ]; then
+    CLAUDE_API_KEY=$(python3 -c "
+import json, os
+settings = os.path.expanduser('~/.claude/settings.json')
+if os.path.exists(settings):
+    with open(settings) as f:
+        s = json.load(f)
+    print(s.get('env', {}).get('ANTHROPIC_API_KEY', ''))
+" 2>/dev/null)
+fi
+if [ -z "${CLAUDE_API_BASE:-}" ]; then
+    CLAUDE_API_BASE=$(python3 -c "
+import json, os
+settings = os.path.expanduser('~/.claude/settings.json')
+if os.path.exists(settings):
+    with open(settings) as f:
+        s = json.load(f)
+    print(s.get('env', {}).get('ANTHROPIC_BASE_URL', 'https://api.anthropic.com'))
+" 2>/dev/null)
+fi
+# 加载 API 辅助函数
+if [ -f "$SCRIPT_DIR/../lib/claude_api.sh" ]; then
+    source "$SCRIPT_DIR/../lib/claude_api.sh"
+fi
+
 # 确保 cron 环境能找到所有需要的命令
 export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 export HOME="$HOME"
@@ -180,9 +206,14 @@ if [ -n "$RUNNING_SESSIONS" ]; then
 $RUNNING_SESSIONS"
 fi
 
-# 调用 Claude CLI 生成日报
+# 生成日报（优先用 API 直接调用，不产生 Claude Code 会话记录）
 REPORT=""
-if [ -n "$CLAUDE_BIN" ] && [ -x "$CLAUDE_BIN" ]; then
+if [ -n "${CLAUDE_API_KEY:-}" ] && type claude_api_call &>/dev/null; then
+    REPORT=$(claude_api_call "" "$PROMPT" 2>/dev/null)
+fi
+
+# 兜底：如果 API 不可用，使用 claude CLI
+if [ -z "$REPORT" ] && [ -n "$CLAUDE_BIN" ] && [ -x "$CLAUDE_BIN" ]; then
     REPORT=$(echo "$PROMPT" | timeout 120 "$CLAUDE_BIN" --print -p "" 2>/dev/null) || true
 fi
 

@@ -1,0 +1,17 @@
+# 用户配置（包含敏感凭证）
+config.sh
+
+# 编辑器
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# 系统文件
+.DS_Store
+Thumbs.db

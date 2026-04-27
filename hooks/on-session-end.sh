@@ -39,6 +39,7 @@ fi
 # 兼容旧模式：如果 API Key 不可用，回退到 claude CLI
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "")}"
 PYTHON3="python3"
+JOURNAL_DIR="${JOURNAL_DIR:-$HOME/daily_journal}/raw"
 TODAY=$(date +%Y-%m-%d)
 NOW=$(date +"%H:%M")
 RAW_LOG="$JOURNAL_DIR/$TODAY.md"
